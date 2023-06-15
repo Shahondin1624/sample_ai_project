@@ -56,3 +56,6 @@ class NeuralNetwork:
     def print_internals(self):
         print(f"Weights input->hidden: {self.weights_input_hidden}")
         print(f"Weights hidden->output: {self.weights_hidden_output}")
+
+    def export_internals(self):
+        return self.weights_input_hidden, self.weights_hidden_output
