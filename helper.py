@@ -3,8 +3,6 @@ import re
 import time
 from itertools import product
 
-from simpleCache import SimpleCache
-
 
 def extract_parameters(name: str):
     extractor_pattern = r'\d+\.\d+|\d+'
@@ -21,6 +19,7 @@ def generate_file_name(hidden_nodes: int, learning_rate: float, epochs: int, per
     return f'performance_{performance}_epochs_{epochs}_hidden_nodes_{hidden_nodes}_learning_rate_{learning_rate}.npz'
 
 
+# returns all model_file_names that match the pattern
 def get_all_models():
     pattern = r'^performance_\d+\.\d+_epochs_\d+_hidden_nodes_\d+_learning_rate_\d+\.\d+\.npz$'
     folder_path = "models"
@@ -55,3 +54,11 @@ def create_parameter_permutations(epochs_lower: int, epochs_upper: int, hidden_n
                            [lr / 100.0 for lr in
                             range(learning_rate_lower, learning_rate_upper, learning_rate_step_rate)])
     return permutations
+
+
+def derive_file_path(name: str):
+    file_path = "models/" + name
+    return file_path
+
+def extract_performance_from_model_name(name: str):
+    return float(name.split("_")[1])

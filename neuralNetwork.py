@@ -1,6 +1,7 @@
-import dill
 import numpy.random
 from scipy import special
+
+from helper import derive_file_path
 
 
 class NeuralNetwork:
@@ -17,7 +18,6 @@ class NeuralNetwork:
         pass
 
     def train(self, input_list, target_list):
-        # print(f"Training for a dataset of {len(input_list)} items")
         # print("Transposing training data...")
         inputs = numpy.array(input_list, ndmin=2).T
         targets = numpy.array(target_list, ndmin=2).T
@@ -59,6 +59,7 @@ class NeuralNetwork:
 
     def export_to_file(self, name: str):
         file_path = derive_file_path(name)
+        # savez_compressed accepts named parameters that are then stored in the file
         numpy.savez_compressed(file_path, weights_input_hidden=self.weights_input_hidden,
                                weights_hidden_output=self.weights_hidden_output, learning_rate=self.learning_rate)
 
@@ -71,11 +72,6 @@ def import_model(name: str):
     learning_rate = data['learning_rate']
     ann = create_from_arrays(weight_input_hidden, weight_hidden_output, learning_rate)
     return ann
-
-
-def derive_file_path(name: str):
-    file_path = "models/" + name
-    return file_path
 
 
 def create_from_arrays(weight_input_hidden: numpy.numarray, weight_hidden_output: numpy.numarray, learning_rate: float):

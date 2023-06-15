@@ -1,15 +1,15 @@
 import time
+from multiprocessing import Pool, Manager
 
 import numpy as numpy
 
 import helper
 import neuralNetwork
-from helper import extract_parameters, format_runtime, get_all_models, generate_file_name, estimate_runtime_left
+from helper import extract_parameters, format_runtime, get_all_models, generate_file_name
 from simpleCache import SimpleCache
-from multiprocessing import Pool, Value, Process, Manager
-from itertools import product
 
 
+# loading and normalizing+preparing training/test data
 def load_training_data(is_training: bool):
     if is_training:
         path = "samples/mnist_train.csv"
@@ -30,6 +30,7 @@ def load_training_data(is_training: bool):
     return images, labels
 
 
+# training the network according the passed parameters
 def train_network(epochs: int, input_nodes: int, hidden_nodes: int, output_nodes: int, learning_rate: float):
     ann = neuralNetwork.NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
     images, labels = load_training_data(True)
@@ -46,6 +47,7 @@ def train_network(epochs: int, input_nodes: int, hidden_nodes: int, output_nodes
     return ann, training_time
 
 
+# testing the accuracy of the network's predictions
 def test_network(ann: neuralNetwork):
     scorecard = []
     test_images, test_labels = load_training_data(False)
@@ -67,18 +69,15 @@ def determine_best_performing_model():
     best_model, best_performance = None, 0.0
     for filename in get_all_models():
         current_name = filename
-        current_performance = extract_performance_from_model_name(current_name)
+        current_performance = helper.extract_performance_from_model_name(current_name)
         if current_performance > best_performance:
             best_performance = current_performance
             best_model = current_name
     return best_model, best_performance
 
 
-def extract_performance_from_model_name(name: str):
-    return float(name.split("_")[1])
-
-
-def already_tested(cache: SimpleCache, epochs: int, hidden_nodes: int, learning_rate: float):
+# checks whether a network with the given parameters has already been trained by checking the cache
+def already_trained(cache: SimpleCache, epochs: int, hidden_nodes: int, learning_rate: float):
     return cache.contains_tuple(hidden_nodes, epochs, learning_rate)
 
 
@@ -99,19 +98,21 @@ def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes
                                                           learning_rate_lower, learning_rate_upper,
                                                           learning_rate_step_rate)
     pool = Pool()
-    results = pool.starmap(threadable_training, [(*params, thread_safe_cache.cache, counter, total_iterations) for params in parameter_list])
+    results = pool.starmap(threadable_training,
+                           [(*params, thread_safe_cache.cache, counter, total_iterations) for params in parameter_list])
 
     best_model, best_performance = determine_best_performing_model()
     print(f"Best performing model: {best_model} with a performance of {best_performance}")
     return extract_parameters(best_model)
 
 
+# threadsafe implementation of a full training run of one network
 def threadable_training(epochs, hidden_nodes, learning_rate, cache, counter, total_iterations: int):
     input_nodes: int = 784
     output_nodes: int = 10
     current_iteration = counter.value
     counter.value += 1
-    if already_tested(cache, epochs, hidden_nodes, learning_rate):
+    if already_trained(cache, epochs, hidden_nodes, learning_rate):
         print(f"Already created a network with epochs={epochs}, "
               f"hidden_nodes={hidden_nodes}, learning_rate={learning_rate}")
         return
