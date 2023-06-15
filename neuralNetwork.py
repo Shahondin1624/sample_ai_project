@@ -1,3 +1,4 @@
+import dill
 import numpy.random
 from scipy import special
 
@@ -56,5 +57,34 @@ class NeuralNetwork:
         print(f"Weights input->hidden: {self.weights_input_hidden}")
         print(f"Weights hidden->output: {self.weights_hidden_output}")
 
-    def export_internals(self):
-        return self.weights_input_hidden, self.weights_hidden_output
+    def export_to_file(self, name: str):
+        file_path = derive_file_path(name)
+        numpy.savez_compressed(file_path, weights_input_hidden=self.weights_input_hidden,
+                               weights_hidden_output=self.weights_hidden_output, learning_rate=self.learning_rate)
+
+
+def import_model(name: str):
+    file_path = derive_file_path(name)
+    data = numpy.load(file_path)
+    weight_input_hidden = data['weights_input_hidden']
+    weight_hidden_output = data['weights_hidden_output']
+    learning_rate = data['learning_rate']
+    ann = create_from_arrays(weight_input_hidden, weight_hidden_output, learning_rate)
+    return ann
+
+
+def derive_file_path(name: str):
+    file_path = "models/" + name
+    return file_path
+
+
+def create_from_arrays(weight_input_hidden: numpy.numarray, weight_hidden_output: numpy.numarray, learning_rate: float):
+    dimensions_input_hidden = weight_input_hidden.shape
+    dimensions_hidden_output = weight_hidden_output.shape
+    input_nodes = dimensions_input_hidden[1]
+    hidden_nodes = dimensions_input_hidden[0]
+    output_nodes = dimensions_hidden_output[0]
+    ann = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+    ann.weights_input_hidden = weight_input_hidden
+    ann.weights_hidden_output = weight_hidden_output
+    return ann
