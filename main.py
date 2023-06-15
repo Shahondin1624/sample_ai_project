@@ -39,10 +39,14 @@ def train_network(epochs: int, input_nodes: int, hidden_nodes: int, output_nodes
             label = labels[i]
             ann.train(image, label)
     training_time = time.time() - start_time
-    milliseconds = int((training_time - int(training_time)) * 1000)
-    formatted_runtime = time.strftime(f"%H:%M:%S.{milliseconds:03d}", time.gmtime(training_time))
+    formatted_runtime = format_runtime(training_time)
     print(f"Training took: {formatted_runtime}s")
-    return ann
+    return ann, training_time
+
+
+def format_runtime(duration: float):
+    milliseconds = int((duration - int(duration)) * 1000)
+    return time.strftime(f"%H:%M:%S.{milliseconds:03d}", time.gmtime(duration))
 
 
 def test_network(ann: neuralNetwork):
@@ -103,6 +107,12 @@ def extract_performance_from_model_name(name: str):
     return float(name.split("_")[1])
 
 
+def estimate_runtime_left(current_iteration: int, total_iterations: int, runtime: float):
+    runtime_left = (total_iterations - current_iteration) * runtime
+    formatted_runtime = format_runtime(runtime_left)
+    return f'At current speed, the training will take at least another {formatted_runtime}'
+
+
 # Will return the following values of the best performing model in this order: performance, epochs, hidden_nodes,
 # learning_rate. lower/upper represent the bounds in between models will be tested. lower < upper for this code to work
 def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes_lower: int, hidden_nodes_upper: int,
@@ -111,19 +121,21 @@ def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes
     input_nodes: int = 784
     output_nodes: int = 10
 
-    total_iterations = (epochs_upper - epochs_lower) * (hidden_nodes_upper - hidden_nodes_lower) * (
-            learning_rate_upper - learning_rate_lower)
+    total_iterations = int((epochs_upper - epochs_lower) * (
+            (hidden_nodes_upper - hidden_nodes_lower) / hidden_nodes_step_rate) *
+                           ((learning_rate_upper - learning_rate_lower) / learning_rate_step_rate))
     current_iteration = 0
 
-    for epochs in range(epochs_lower, epochs_upper):  # 1, 11
-        for hidden_nodes in range(hidden_nodes_lower, hidden_nodes_upper, hidden_nodes_step_rate):  # 100, 260, 10
+    for epochs in range(epochs_lower, epochs_upper):
+        for hidden_nodes in range(hidden_nodes_lower, hidden_nodes_upper, hidden_nodes_step_rate):
             for learning_rate_as_int in range(learning_rate_lower, learning_rate_upper,
-                                              learning_rate_step_rate):  # 10, 40, 5
+                                              learning_rate_step_rate):
                 learning_rate = learning_rate_as_int / 100.0
-                ann = train_network(epochs, input_nodes, hidden_nodes, output_nodes, learning_rate)
+                ann, training_time = train_network(epochs, input_nodes, hidden_nodes, output_nodes, learning_rate)
                 performance = test_network(ann)
                 name = generate_file_name(hidden_nodes, learning_rate, epochs, performance)
-                print(f"{name} - {current_iteration}/{total_iterations}")
+                print(
+                    f"{name} - {current_iteration}/{total_iterations} - {estimate_runtime_left(current_iteration, total_iterations, training_time)}")
                 current_iteration += 1
                 export_model(ann, name)
     best_model, best_performance = determine_best_performing_model()
@@ -140,8 +152,8 @@ def main():
     hidden_nodes_upper = 260
     hidden_nodes_step_rate = 10
     learning_rate_lower = 10
-    learning_rate_upper = 40
-    learning_rate_step_rate = 5
+    learning_rate_upper = 30
+    learning_rate_step_rate = 1
     determine_best_parameters(epochs_lower, epochs_upper, hidden_nodes_lower, hidden_nodes_upper,
                               hidden_nodes_step_rate, learning_rate_lower, learning_rate_upper, learning_rate_step_rate)
 
