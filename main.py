@@ -103,21 +103,47 @@ def extract_performance_from_model_name(name: str):
     return float(name.split("_")[1])
 
 
-def main():
+# Will return the following values of the best performing model in this order: performance, epochs, hidden_nodes,
+# learning_rate. lower/upper represent the bounds in between models will be tested. lower < upper for this code to work
+def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes_lower: int, hidden_nodes_upper: int,
+                              hidden_nodes_step_rate: int, learning_rate_lower: int, learning_rate_upper: int,
+                              learning_rate_step_rate: int):
     input_nodes: int = 784
     output_nodes: int = 10
 
-    for epochs in range(1, 11):
-        for hidden_nodes in range(100, 260, 10):
-            for learning_rate_as_int in range(10, 40, 5):
+    total_iterations = (epochs_upper - epochs_lower) * (hidden_nodes_upper - hidden_nodes_lower) * (
+            learning_rate_upper - learning_rate_lower)
+    current_iteration = 0
+
+    for epochs in range(epochs_lower, epochs_upper):  # 1, 11
+        for hidden_nodes in range(hidden_nodes_lower, hidden_nodes_upper, hidden_nodes_step_rate):  # 100, 260, 10
+            for learning_rate_as_int in range(learning_rate_lower, learning_rate_upper,
+                                              learning_rate_step_rate):  # 10, 40, 5
                 learning_rate = learning_rate_as_int / 100.0
                 ann = train_network(epochs, input_nodes, hidden_nodes, output_nodes, learning_rate)
                 performance = test_network(ann)
                 name = generate_file_name(hidden_nodes, learning_rate, epochs, performance)
-                print(name)
+                print(f"{name} - {current_iteration}/{total_iterations}")
+                current_iteration += 1
                 export_model(ann, name)
     best_model, best_performance = determine_best_performing_model()
     print(f"Best performing model: {best_model} with a performance of {best_performance}")
+    extractor_pattern = r'\d+\.\d+|\d+'
+    parameters = [float(match) for match in re.findall(extractor_pattern, best_model)]
+    return parameters[0], parameters[1], parameters[2], parameters[3]
+
+
+def main():
+    epochs_lower = 1
+    epochs_upper = 11
+    hidden_nodes_lower = 100
+    hidden_nodes_upper = 260
+    hidden_nodes_step_rate = 10
+    learning_rate_lower = 10
+    learning_rate_upper = 40
+    learning_rate_step_rate = 5
+    determine_best_parameters(epochs_lower, epochs_upper, hidden_nodes_lower, hidden_nodes_upper,
+                              hidden_nodes_step_rate, learning_rate_lower, learning_rate_upper, learning_rate_step_rate)
 
 
 if __name__ == '__main__':
