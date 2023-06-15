@@ -83,9 +83,13 @@ def already_trained(cache: SimpleCache, epochs: int, hidden_nodes: int, learning
 
 # Will return the following values of the best performing model in this order: performance, epochs, hidden_nodes,
 # learning_rate. lower/upper represent the bounds in between models will be tested. lower < upper for this code to work
+# The upper bounds are inclusive
 def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes_lower: int, hidden_nodes_upper: int,
                               hidden_nodes_step_rate: int, learning_rate_lower: int, learning_rate_upper: int,
                               learning_rate_step_rate: int, cache: SimpleCache, manager: Manager):
+    epochs_upper += 1
+    hidden_nodes_upper += 1
+    learning_rate_upper += 1
     total_iterations = int((epochs_upper - epochs_lower) * (
             (hidden_nodes_upper - hidden_nodes_lower) / hidden_nodes_step_rate) *
                            ((learning_rate_upper - learning_rate_lower) / learning_rate_step_rate))
