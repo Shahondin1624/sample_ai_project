@@ -113,6 +113,10 @@ def estimate_runtime_left(current_iteration: int, total_iterations: int, runtime
     return f'At current speed, the training will take at least another {formatted_runtime}h'
 
 
+def already_tested(epochs: int, hidden_nodes: int, learning_rate: float):
+    return True
+
+
 # Will return the following values of the best performing model in this order: performance, epochs, hidden_nodes,
 # learning_rate. lower/upper represent the bounds in between models will be tested. lower < upper for this code to work
 def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes_lower: int, hidden_nodes_upper: int,
@@ -131,6 +135,10 @@ def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes
             for learning_rate_as_int in range(learning_rate_lower, learning_rate_upper,
                                               learning_rate_step_rate):
                 learning_rate = learning_rate_as_int / 100.0
+                if already_tested(epochs, hidden_nodes, learning_rate):
+                    print(f"Already created a network with epochs={epochs}, "
+                          f"hidden_nodes={hidden_nodes}, learning_rate={learning_rate}")
+                    continue
                 ann, training_time = train_network(epochs, input_nodes, hidden_nodes, output_nodes, learning_rate)
                 performance = test_network(ann)
                 name = generate_file_name(hidden_nodes, learning_rate, epochs, performance)
