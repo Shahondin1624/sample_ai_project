@@ -40,7 +40,6 @@ class NeuralNetwork:
         self.weights_input_hidden += self.learning_rate * numpy.dot(
             (hidden_errors * hidden_outputs * (1.0 - hidden_outputs)),
             numpy.transpose(inputs))
-        pass
 
     def query(self, input_list):
         inputs = numpy.array(input_list, ndmin=2).T

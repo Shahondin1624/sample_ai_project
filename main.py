@@ -124,7 +124,7 @@ def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes
     total_iterations = int((epochs_upper - epochs_lower) * (
             (hidden_nodes_upper - hidden_nodes_lower) / hidden_nodes_step_rate) *
                            ((learning_rate_upper - learning_rate_lower) / learning_rate_step_rate))
-    current_iteration = 0
+    current_iteration = 1
 
     for epochs in range(epochs_lower, epochs_upper):
         for hidden_nodes in range(hidden_nodes_lower, hidden_nodes_upper, hidden_nodes_step_rate):
