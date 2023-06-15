@@ -4,6 +4,8 @@ import scipy.special as scipy
 import matplotlib.pyplot as matplot
 import dill
 import time
+import os
+import re
 
 
 def load_training_data(is_training: bool):
@@ -79,8 +81,26 @@ def derive_file_path(name: str):
 
 
 def generate_file_name(hidden_nodes: int, learning_rate: float, epochs: int, performance: float):
-    return "performance_" + str(performance) + "_epochs_" + str(epochs) + "_hidden_nodes_" + str(hidden_nodes) + \
-        "_learning_rate_" + str(learning_rate)
+    return f'performance_{performance}_epochs_{epochs}_hidden_nodes_{hidden_nodes}_learning_rate_{learning_rate}.bin'
+
+
+def determine_best_performing_model():
+    pattern = r'^performance_\d+\.\d+_epochs_\d+_hidden_nodes_\d+_learning_rate_\d+\.\d+\.bin$'
+    folder_path = "models"
+    best_model, best_performance = None, 0.0
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        if os.path.isfile(file_path) and re.match(pattern, filename):
+            current_name = filename
+            current_performance = extract_performance_from_model_name(current_name)
+            if current_performance > best_performance:
+                best_performance = current_performance
+                best_model = current_name
+    return best_model, best_performance
+
+
+def extract_performance_from_model_name(name: str):
+    return float(name.split("_")[1])
 
 
 def main():
@@ -96,6 +116,8 @@ def main():
                 name = generate_file_name(hidden_nodes, learning_rate, epochs, performance)
                 print(name)
                 export_model(ann, name)
+    best_model, best_performance = determine_best_performing_model()
+    print(f"Best performing model: {best_model} with a performance of {best_performance}")
 
 
 if __name__ == '__main__':
