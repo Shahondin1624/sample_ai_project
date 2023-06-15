@@ -40,7 +40,7 @@ def train_network(epochs: int, input_nodes: int, hidden_nodes: int, output_nodes
             ann.train(image, label)
     training_time = time.time() - start_time
     formatted_runtime = format_runtime(training_time)
-    print(f"Training took: {formatted_runtime}s")
+    print(f"Training took: {formatted_runtime}h")
     return ann, training_time
 
 
@@ -110,7 +110,7 @@ def extract_performance_from_model_name(name: str):
 def estimate_runtime_left(current_iteration: int, total_iterations: int, runtime: float):
     runtime_left = (total_iterations - current_iteration) * runtime
     formatted_runtime = format_runtime(runtime_left)
-    return f'At current speed, the training will take at least another {formatted_runtime}'
+    return f'At current speed, the training will take at least another {formatted_runtime}h'
 
 
 # Will return the following values of the best performing model in this order: performance, epochs, hidden_nodes,
