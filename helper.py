@@ -60,5 +60,6 @@ def derive_file_path(name: str):
     file_path = "models/" + name
     return file_path
 
+
 def extract_performance_from_model_name(name: str):
     return float(name.split("_")[1])
