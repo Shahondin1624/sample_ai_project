@@ -64,8 +64,13 @@ class MultiLayerNeuralNetwork:
         return final_outputs
 
     def print_internals(self):
-        for weights in self.hidden_layers:
-            print(f"Weights: {weights}")
+        for i, weights in enumerate(self.hidden_layers):
+            if i == 0:
+                print(f"Weights input -> hidden layer {i}: {weights}")
+            elif i == len(self.hidden_layers) - 1:
+                print(f"Weights hidden layer {i - 1} -> output: {weights}")
+            else:
+                print(f"Weights hidden layer {i - 1} -> hidden layer {i}: {weights}")
 
     def export_to_file(self, name: str):
         file_path = derive_file_path(name)
