@@ -9,10 +9,10 @@ class MultiLayerNeuralNetwork:
         self.input_nodes = input_nodes
         self.hidden_layer_nodes = hidden_layer_nodes
         self.hidden_layers = []
-        self.__init_hidden_layers()
         self.output_nodes = output_nodes
         self.learning_rate = learning_rate
         self.activation_function = lambda x: special.expit(x)
+        self.__init_hidden_layers()
 
     def __init_hidden_layers(self):
         current_node_count = self.input_nodes
