@@ -1,4 +1,5 @@
 import numpy
+from scipy import special
 
 from helper import derive_file_path
 
@@ -11,6 +12,7 @@ class MultiLayerNeuralNetwork:
         self.__init_hidden_layers()
         self.output_nodes = output_nodes
         self.learning_rate = learning_rate
+        self.activation_function = lambda x: special.expit(x)
 
     def __init_hidden_layers(self):
         current_node_count = self.input_nodes
@@ -24,39 +26,41 @@ class MultiLayerNeuralNetwork:
         self.hidden_layers.append(weights_current_next)
 
     def train(self, input_list, target_list):
-        # print("Transposing training data...")
         inputs = numpy.array(input_list, ndmin=2).T
         targets = numpy.array(target_list, ndmin=2).T
-        # print("Calculating hidden inputs...")
-        hidden_inputs = numpy.dot(self.weights_input_hidden, inputs)
-        # print("Calculating hidden outputs...")
-        hidden_outputs = self.activation_function(hidden_inputs)
-        # print("Calculating output inputs...")
-        final_inputs = numpy.dot(self.weights_hidden_output, hidden_outputs)
-        # print("Calculating output values...")
-        final_outputs = self.activation_function(final_inputs)
-        # print("Calculating total errors...")
+
+        # Forward pass
+        layer_inputs = [inputs]
+        layer_outputs = []
+        for weights in self.hidden_layers:
+            hidden_inputs = numpy.dot(weights, layer_inputs[-1])
+            hidden_outputs = self.activation_function(hidden_inputs)
+            layer_inputs.append(hidden_outputs)
+            layer_outputs.append(hidden_outputs)
+
+        final_outputs = layer_outputs[-1]
         output_errors = targets - final_outputs
-        # print("Calculating hidden errors...")
-        hidden_errors = numpy.dot(self.weights_hidden_output.T, output_errors)
-        # print("Adjusting weights (hidden->output)...")
-        self.weights_hidden_output += self.learning_rate * numpy.dot(
-            (output_errors * final_outputs * (1.0 - final_outputs)),
-            numpy.transpose(hidden_outputs))
-        # print("Adjusting weights (input->hidden)...")
-        self.weights_input_hidden += self.learning_rate * numpy.dot(
-            (hidden_errors * hidden_outputs * (1.0 - hidden_outputs)),
-            numpy.transpose(inputs))
+
+        # Backward pass
+        errors = output_errors
+        for i in range(len(self.hidden_layers) - 1, -1, -1):
+            weights = self.hidden_layers[i]
+            outputs = layer_outputs[i]
+            inputs = layer_inputs[i]
+            weights += self.learning_rate * numpy.dot((errors * outputs * (1.0 - outputs)), numpy.transpose(inputs))
+            errors = numpy.dot(weights.T, errors)
 
     def query(self, input_list):
         inputs = numpy.array(input_list, ndmin=2).T
 
-        hidden_inputs = numpy.dot(self.weights_input_hidden, inputs)
-        hidden_outputs = self.activation_function(hidden_inputs)
+        # Forward pass
+        layer_inputs = inputs
+        for weights in self.hidden_layers:
+            hidden_inputs = numpy.dot(weights, layer_inputs)
+            hidden_outputs = self.activation_function(hidden_inputs)
+            layer_inputs = hidden_outputs
 
-        final_inputs = numpy.dot(self.weights_hidden_output, hidden_outputs)
-        final_outputs = self.activation_function(final_inputs)
-
+        final_outputs = layer_inputs
         return final_outputs
 
     def print_internals(self):
@@ -65,28 +69,25 @@ class MultiLayerNeuralNetwork:
 
     def export_to_file(self, name: str):
         file_path = derive_file_path(name)
-        # savez_compressed accepts named parameters that are then stored in the file
-        numpy.savez_compressed(file_path, weights_input_hidden=self.weights_input_hidden,
-                               weights_hidden_output=self.weights_hidden_output, learning_rate=self.learning_rate)
+        data = {'learning_rate': self.learning_rate}
+        for i, weights in enumerate(self.hidden_layers):
+            data[f'weights_{i}'] = weights
+        numpy.savez_compressed(file_path, **data)
 
 
-def import_model(name: str):
+@staticmethod
+def import_from_file(name: str):
     file_path = derive_file_path(name)
     data = numpy.load(file_path)
-    weight_input_hidden = data['weights_input_hidden']
-    weight_hidden_output = data['weights_hidden_output']
     learning_rate = data['learning_rate']
-    ann = create_from_arrays(weight_input_hidden, weight_hidden_output, learning_rate)
-    return ann
-
-
-def create_from_arrays(weight_input_hidden: numpy.numarray, weight_hidden_output: numpy.numarray, learning_rate: float):
-    dimensions_input_hidden = weight_input_hidden.shape
-    dimensions_hidden_output = weight_hidden_output.shape
-    input_nodes = dimensions_input_hidden[1]
-    hidden_nodes = dimensions_input_hidden[0]
-    output_nodes = dimensions_hidden_output[0]
-    ann = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
-    ann.weights_input_hidden = weight_input_hidden
-    ann.weights_hidden_output = weight_hidden_output
+    weights = []
+    i = 0
+    while f'weights_{i}' in data:
+        weights.append(data[f'weights_{i}'])
+        i += 1
+    input_nodes = weights[0].shape[1]
+    hidden_layer_nodes = [w.shape[0] for w in weights[:-1]]
+    output_nodes = weights[-1].shape[0]
+    ann = MultiLayerNeuralNetwork(input_nodes, hidden_layer_nodes, output_nodes, learning_rate)
+    ann.hidden_layers = weights
     return ann
