@@ -1,7 +1,9 @@
+import time
+
 import numpy.random
 from scipy import special
 
-from helper import derive_file_path
+from helper import derive_file_path, load_training_data, format_runtime
 
 
 class NeuralNetwork:
@@ -84,3 +86,38 @@ def create_from_arrays(weight_input_hidden: numpy.numarray, weight_hidden_output
     ann.weights_input_hidden = weight_input_hidden
     ann.weights_hidden_output = weight_hidden_output
     return ann
+
+
+# training the network according the passed parameters
+def train_network(epochs: int, input_nodes: int, hidden_nodes: int, output_nodes: int, learning_rate: float):
+    ann = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+    images, labels = load_training_data(True)
+    start_time = time.time()
+    for epoch in range(epochs):
+        # print(f"Training for epoch {epoch + 1}...")
+        for i in range(len(images)):
+            image = images[i]
+            label = labels[i]
+            ann.train(image, label)
+    training_time = time.time() - start_time
+    formatted_runtime = format_runtime(training_time)
+    print(f"Training took: {formatted_runtime}h")
+    return ann, training_time
+
+
+# testing the accuracy of the network's predictions
+def test_network(ann: NeuralNetwork):
+    scorecard = []
+    test_images, test_labels = load_training_data(False)
+    for index in range(len(test_images)):
+        query_result = ann.query(test_images[index])
+        result = numpy.argmax(query_result)
+        expected = numpy.argmax(test_labels[index])
+        if result == expected:
+            scorecard.append(1)
+        else:
+            scorecard.append(0)
+    scorecard_array = numpy.asarray(scorecard)
+    score = scorecard_array.sum() / scorecard_array.size
+    # print("performance = ", score)
+    return score

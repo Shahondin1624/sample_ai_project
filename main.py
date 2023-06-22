@@ -1,79 +1,7 @@
-import time
-from multiprocessing import Manager
-
-import numpy as numpy
-
 import helper
-import neuralNetwork
-from helper import extract_parameters, format_runtime, get_all_models, generate_file_name
+from helper import extract_parameters, get_all_models, generate_file_name
+from neuralNetwork import train_network, test_network
 from simpleCache import SimpleCache
-
-
-# loading and normalizing+preparing training/test data
-def load_training_data(is_training: bool):
-    if is_training:
-        path = "samples/mnist_train.csv"
-    else:
-        path = "samples/mnist_test.csv"
-    file = open(path, 'r')
-    data = file.readlines()
-    images = []
-    labels = []
-    for record in data:
-        values = record.split(',')
-        inputs = (numpy.asfarray(values[1:]) / 255.0 * 0.99) + 0.01
-        targets = numpy.zeros(10) + 0.01
-        targets[int(values[0])] = 0.99
-        images.append(inputs)
-        labels.append(targets)
-    file.close()
-    return images, labels
-
-
-# training the network according the passed parameters
-def train_network(epochs: int, input_nodes: int, hidden_nodes: int, output_nodes: int, learning_rate: float):
-    ann = neuralNetwork.NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
-    images, labels = load_training_data(True)
-    start_time = time.time()
-    for epoch in range(epochs):
-        # print(f"Training for epoch {epoch + 1}...")
-        for i in range(len(images)):
-            image = images[i]
-            label = labels[i]
-            ann.train(image, label)
-    training_time = time.time() - start_time
-    formatted_runtime = format_runtime(training_time)
-    print(f"Training took: {formatted_runtime}h")
-    return ann, training_time
-
-
-# testing the accuracy of the network's predictions
-def test_network(ann: neuralNetwork):
-    scorecard = []
-    test_images, test_labels = load_training_data(False)
-    for index in range(len(test_images)):
-        query_result = ann.query(test_images[index])
-        result = numpy.argmax(query_result)
-        expected = numpy.argmax(test_labels[index])
-        if result == expected:
-            scorecard.append(1)
-        else:
-            scorecard.append(0)
-    scorecard_array = numpy.asarray(scorecard)
-    score = scorecard_array.sum() / scorecard_array.size
-    # print("performance = ", score)
-    return score
-
-
-def determine_best_performing_model():
-    best_model, best_performance = None, 0.0
-    for filename in get_all_models():
-        current_name = filename
-        current_performance = helper.extract_performance_from_model_name(current_name)
-        if current_performance > best_performance:
-            best_performance = current_performance
-            best_model = current_name
-    return best_model, best_performance
 
 
 # checks whether a network with the given parameters has already been trained by checking the cache
@@ -102,7 +30,7 @@ def determine_best_parameters(epochs_lower: int, epochs_upper: int, hidden_nodes
         epochs, hidden_nodes, learning_rate = parameters
         threadable_training(epochs, hidden_nodes, learning_rate, cache, counter + 1, total_iterations)
 
-    best_model, best_performance = determine_best_performing_model()
+    best_model, best_performance = helper.determine_best_performing_model()
     print(f"Best performing model: {best_model} with a performance of {best_performance}")
     return extract_parameters(best_model)
 

@@ -3,6 +3,8 @@ import re
 import time
 from itertools import product
 
+import numpy
+
 
 def extract_parameters(name: str):
     extractor_pattern = r'\d+\.\d+|\d+'
@@ -63,3 +65,35 @@ def derive_file_path(name: str):
 
 def extract_performance_from_model_name(name: str):
     return float(name.split("_")[1])
+
+
+# loading and normalizing+preparing training/test data
+def load_training_data(is_training: bool):
+    if is_training:
+        path = "samples/mnist_train.csv"
+    else:
+        path = "samples/mnist_test.csv"
+    file = open(path, 'r')
+    data = file.readlines()
+    images = []
+    labels = []
+    for record in data:
+        values = record.split(',')
+        inputs = (numpy.asfarray(values[1:]) / 255.0 * 0.99) + 0.01
+        targets = numpy.zeros(10) + 0.01
+        targets[int(values[0])] = 0.99
+        images.append(inputs)
+        labels.append(targets)
+    file.close()
+    return images, labels
+
+
+def determine_best_performing_model():
+    best_model, best_performance = None, 0.0
+    for filename in get_all_models():
+        current_name = filename
+        current_performance = helper.extract_performance_from_model_name(current_name)
+        if current_performance > best_performance:
+            best_performance = current_performance
+            best_model = current_name
+    return best_model, best_performance
