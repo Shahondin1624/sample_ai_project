@@ -4,3 +4,4 @@ matplot
 python-mnist
 matplotlib~=3.7.1
 mnist~=0.2.2
+scikit-learn

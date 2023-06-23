@@ -55,6 +55,11 @@ class NeuralNetwork:
 
         return final_outputs
 
+    def query_and_transform_answer(self, input_list):
+        answer = self.query(input_list)
+        index = numpy.argmax(answer)
+        return index
+
     def print_internals(self):
         print(f"Weights input->hidden: {self.weights_input_hidden}")
         print(f"Weights hidden->output: {self.weights_hidden_output}")

@@ -61,7 +61,12 @@ class MultiLayerNeuralNetwork:
             layer_inputs = hidden_outputs
 
         final_outputs = layer_inputs
-        return final_outputs
+        return final_outputs  #
+
+    def query_and_transform_answer(self, input_list):
+        answer = self.query(input_list)
+        index = numpy.argmax(answer)
+        return index
 
     def print_internals(self):
         for i, weights in enumerate(self.hidden_layers):

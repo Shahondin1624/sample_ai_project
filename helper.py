@@ -1,6 +1,7 @@
+import time
+from datetime import datetime
 import os
 import re
-import time
 from itertools import product
 
 import numpy
@@ -92,8 +93,14 @@ def determine_best_performing_model():
     best_model, best_performance = None, 0.0
     for filename in get_all_models():
         current_name = filename
-        current_performance = helper.extract_performance_from_model_name(current_name)
+        current_performance = extract_performance_from_model_name(current_name)
         if current_performance > best_performance:
             best_performance = current_performance
             best_model = current_name
     return best_model, best_performance
+
+
+def convert_to_unix_timestamp(date: str):
+    date = datetime.strptime(date, '%Y-%m-%d')
+    timestamp = int(time.mktime(date.timetuple()))
+    return timestamp
