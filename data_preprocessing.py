@@ -3,6 +3,7 @@ import numpy
 from sklearn import preprocessing
 
 import helper
+from stock_market import Data
 
 
 def read_files(root_path: str, file_handler):
@@ -39,6 +40,13 @@ def handle_stock_market_file(lines: list):
 def export_to_file(normalized_array: numpy.array, file_path: str):
     # savez_compressed accepts named parameters that are then stored in the file
     numpy.savez_compressed(file_path, data=normalized_array)
+
+
+def import_from_file(file_path: str):
+    file_data = numpy.load(file_path)
+    stocks = file_data['data']
+    data = Data(stocks)
+    return data
 
 
 def main():

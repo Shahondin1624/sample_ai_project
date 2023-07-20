@@ -4,6 +4,7 @@ import time
 
 import numpy
 
+import data_preprocessing
 import helper
 import multiLayerNeuralNetwork
 
@@ -39,6 +40,14 @@ class Data:
         self.etf = __read_data__(root_path + "/ETFs", etf_percentage)
         self.stock = __read_data__(root_path + "/Stocks", stock_percentage)
 
+    def __init__(self, arr: numpy.array):
+        data_points = []
+        for row in arr:
+            date, open_, high, low, close, volume, open_int = row
+            data_point = DataPoint(date, open_, high, low, close, volume, open_int)
+            data_points.append(data_point)
+        self.stock = data_points
+
 
 class DataPoint:
     def __init__(self, date: int, open_: float, high: float, low: float, close: float, volume: float,
@@ -68,8 +77,8 @@ def __read_data__(root_path, percentage: float):
 
 
 def main():
-    epochs = 2
-    data = Data("samples/stock_market", 0.0, 0.5)
+    epochs = 5
+    data = data_preprocessing.import_from_file("samples/stock_market/stocks.npz")
     ann = multiLayerNeuralNetwork.MultiLayerNeuralNetwork(3, [15, 10, 5], 3, 0.25)
     print(f"Starting training with {len(data.stock)} data points")
     start_time = time.time()
@@ -78,12 +87,13 @@ def main():
         for data_point in data.stock:
             # print(f"training with {data_point.date}, {data_point.open_}, {data_point.volume}, expecting {
             # data_point.close}")
-            ann.train(data_point.as_list(), [__return_change_(data_point.open_, data_point.close)])
+            ann.train(data_point.as_list(), [__return_change__(data_point.open_, data_point.close)])
     training_time = time.time() - start_time
     formatted_runtime = helper.format_runtime(training_time)
     print(f"Training took: {formatted_runtime}h")
     performance = int(test_network(ann, data) * 100)
     print(f"Network reached {performance}% accuracy")
+    ann.export_to_file("stock_market.npz")
 
 
 def test_network(ann: multiLayerNeuralNetwork.MultiLayerNeuralNetwork, data: Data):
@@ -101,14 +111,14 @@ def test_network(ann: multiLayerNeuralNetwork.MultiLayerNeuralNetwork, data: Dat
 
 
 def __handle_comparison(actual_value: int, open_: float, close: float):
-    expected = __return_change_(open_, close)
+    expected = __return_change__(open_, close)
     if actual_value == expected:  # return score
         return 1
     else:
         return 0
 
 
-def __return_change_(open_: float, close: float):
+def __return_change__(open_: float, close: float):
     if open_ < close:
         expected = 2
     elif open_ > close:
